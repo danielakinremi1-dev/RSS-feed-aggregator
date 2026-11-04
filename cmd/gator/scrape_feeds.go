@@ -31,10 +31,11 @@ func scrapeFeeds(s *state) {
 		return
 	}
 
-	for i, item := range RSSFeed.Channel.Item {
+	var newPosts, existing, invalid int
+	for _, item := range RSSFeed.Channel.Item {
 
 		if len(item.Link) < 1 {
-			log.Printf(" Post #%v from RSS feed %v save skipped : No valid URL\n", i, nextFeed.Name)
+			invalid++
 			continue
 		}
 
@@ -92,8 +93,12 @@ func scrapeFeeds(s *state) {
 			continue
 		}
 		if inserted == 0 {
-			continue // already stored
+			existing++
+			continue
 		}
-		log.Printf("Feed %s collected, %v posts found", nextFeed.Name, len(RSSFeed.Channel.Item))
+		newPosts++
 	}
+
+	log.Printf("Feed %q: %d new, %d already stored, %d invalid (of %d items)",
+		nextFeed.Name, newPosts, existing, invalid, len(RSSFeed.Channel.Item))
 }
