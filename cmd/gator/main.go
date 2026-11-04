@@ -4,6 +4,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -25,6 +26,15 @@ func main() {
 // run holds everything main would, but returns errors so deferred cleanup
 // (closing the DB, releasing the signal handler) runs before the process exits.
 func run(args []string) error {
+	if cli.IsHelp(args) {
+		if len(args) == 0 {
+			cli.PrintHelp(os.Stderr)
+			return errors.New("no command given")
+		}
+		cli.PrintHelp(os.Stdout)
+		return nil
+	}
+
 	// Cancelled on Ctrl-C or SIGTERM. After the first signal, stop() restores
 	// default handling so a second Ctrl-C kills the process immediately.
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
