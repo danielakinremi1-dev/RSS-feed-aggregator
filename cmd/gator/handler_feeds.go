@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
+	"text/tabwriter"
 )
 
 func handlerFeeds(s *state, cmd command) error {
@@ -12,9 +14,15 @@ func handlerFeeds(s *state, cmd command) error {
 		return fmt.Errorf("list feeds: %w", err)
 	}
 
-	for _, feed := range feeds {
-		fmt.Printf("* %+v\n", feed)
+	if len(feeds) == 0 {
+		fmt.Println("No feeds yet. Add one with: gator addfeed <name> <url>")
+		return nil
 	}
 
-	return nil
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+	fmt.Fprintln(w, "NAME\tURL\tADDED BY")
+	for _, feed := range feeds {
+		fmt.Fprintf(w, "%s\t%s\t%s\n", feed.Name, feed.Url, feed.Creator)
+	}
+	return w.Flush()
 }
