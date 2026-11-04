@@ -1,6 +1,7 @@
 # Gator
 
 [![CI](https://github.com/danielakinremi1-dev/RSS-feed-aggregator/actions/workflows/ci.yml/badge.svg)](https://github.com/danielakinremi1-dev/RSS-feed-aggregator/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 A multi-user command-line RSS and Atom aggregator written in Go and backed by PostgreSQL. Its scraper fetches feeds concurrently, and you can run several copies of it against one database without them fetching the same feed twice.
 
@@ -125,6 +126,6 @@ internal/database/  sqlc-generated queries (from sql/queries)
 sql/schema/         goose migrations
 ```
 
-## Credits
+## License
 
-Gator started as the guided "Build a Blog Aggregator" project in [Boot.dev](https://www.boot.dev)'s backend course. The concurrent scraper, caching, backoff, tests and tooling were added on top.
+[MIT](LICENSE)
