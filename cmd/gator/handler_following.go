@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/danielakinremi1-dev/RSS_feed_aggregator/internal/database"
 )
@@ -12,8 +11,7 @@ func handlerFollowing(s *state, cmd command, user database.User) error {
 
 	feedFollows, err := s.db.GetFeedFollowsForUser(context.Background(), user.ID)
 	if err != nil {
-		fmt.Println("Error fetching feed follows")
-		os.Exit(1)
+		return fmt.Errorf("list feed follows for %q: %w", user.Name, err)
 	}
 
 	if len(feedFollows) == 0 {

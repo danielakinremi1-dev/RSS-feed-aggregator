@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/danielakinremi1-dev/RSS_feed_aggregator/internal/database"
@@ -29,8 +28,7 @@ func handlerAddFeed(s *state, cmd command, user database.User) error {
 
 	feedData, err := s.db.CreateFeed(context.Background(), queryArgs)
 	if err != nil {
-		fmt.Println("Error creating RSSFeed entry")
-		os.Exit(1)
+		return fmt.Errorf("create feed %q: %w", url, err)
 	}
 
 	fmt.Println("RSSFeed created successfully!")
@@ -38,8 +36,7 @@ func handlerAddFeed(s *state, cmd command, user database.User) error {
 
 	err = handlerFollow(s, command{Name: "follow", Args: []string{feedData.Url}}, user)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		return err
 	}
 
 	return nil

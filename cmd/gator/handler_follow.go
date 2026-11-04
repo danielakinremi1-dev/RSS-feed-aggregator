@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/danielakinremi1-dev/RSS_feed_aggregator/internal/database"
@@ -19,8 +18,7 @@ func handlerFollow(s *state, cmd command, user database.User) error {
 
 	feedID, err := s.db.GetFeedID(context.Background(), url)
 	if err != nil {
-		fmt.Println("Error fetching feed ID")
-		os.Exit(1)
+		return fmt.Errorf("follow %q: look up feed: %w", url, err)
 	}
 
 	queryArgs := database.CreateFeedFollowParams{
@@ -33,8 +31,7 @@ func handlerFollow(s *state, cmd command, user database.User) error {
 
 	feedFollow, err := s.db.CreateFeedFollow(context.Background(), queryArgs)
 	if err != nil {
-		fmt.Println("Error creating feed follow")
-		os.Exit(1)
+		return fmt.Errorf("follow %q: %w", url, err)
 	}
 
 	fmt.Println("* RSSFeed followed successfully!")

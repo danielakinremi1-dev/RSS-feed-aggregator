@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"os"
 
@@ -52,7 +53,8 @@ func main() {
 
 	err = mainCommands.run(programState, command{Name: cmdName, Args: cmdArgs})
 	if err != nil {
-		log.Fatal(err)
+		fmt.Fprintln(os.Stderr, "gator:", err)
+		os.Exit(1)
 	}
 
 }

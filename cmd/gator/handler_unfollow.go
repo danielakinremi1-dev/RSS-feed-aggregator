@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/danielakinremi1-dev/RSS_feed_aggregator/internal/database"
 )
@@ -17,8 +16,7 @@ func handlerUnfollow(s *state, cmd command, user database.User) error {
 
 	feedID, err := s.db.GetFeedID(context.Background(), url)
 	if err != nil {
-		fmt.Println("Error creating RSSFeed entry")
-		os.Exit(1)
+		return fmt.Errorf("unfollow %q: look up feed: %w", url, err)
 	}
 
 	queryArgs := database.DeleteFeedFollowParams{
@@ -28,8 +26,7 @@ func handlerUnfollow(s *state, cmd command, user database.User) error {
 
 	err = s.db.DeleteFeedFollow(context.Background(), queryArgs)
 	if err != nil {
-		fmt.Println("Error deleting RSSFeed entry")
-		os.Exit(1)
+		return fmt.Errorf("unfollow %q: %w", url, err)
 	}
 
 	fmt.Println("")

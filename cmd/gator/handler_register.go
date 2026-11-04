@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/danielakinremi1-dev/RSS_feed_aggregator/internal/database"
@@ -21,11 +20,9 @@ func handlerRegister(s *state, cmd command) error {
 
 	_, err := s.db.GetUser(context.Background(), name)
 	if err == nil {
-		fmt.Println("User is already registered")
-		os.Exit(1)
+		return fmt.Errorf("user %q is already registered", name)
 	} else if !errors.Is(err, sql.ErrNoRows) {
-		fmt.Println("Error registering user")
-		os.Exit(1)
+		return fmt.Errorf("register %q: check existing user: %w", name, err)
 	}
 
 	queryArgs := database.CreateUserParams{
@@ -37,14 +34,12 @@ func handlerRegister(s *state, cmd command) error {
 
 	user, err := s.db.CreateUser(context.Background(), queryArgs)
 	if err != nil {
-		fmt.Println("Error creating users")
-		os.Exit(1)
+		return fmt.Errorf("register %q: %w", name, err)
 	}
 
 	err = s.cfg.SetUser(name)
 	if err != nil {
-		fmt.Println("Error setting user")
-		os.Exit(1)
+		return fmt.Errorf("register %q: set current user: %w", name, err)
 	}
 
 	fmt.Println("User created successfully!")
