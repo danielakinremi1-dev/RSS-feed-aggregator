@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 )
 
@@ -9,20 +10,23 @@ type command struct {
 	Args []string
 }
 
+// handlerFunc is the signature every command implements. ctx is cancelled
+// when the user interrupts the program.
+type handlerFunc func(ctx context.Context, s *state, cmd command) error
+
 type commands struct {
-	registeredCommands map[string]func(*state, command) error
+	registeredCommands map[string]handlerFunc
 }
 
-func (c *commands) run(s *state, cmd command) error {
+func (c *commands) run(ctx context.Context, s *state, cmd command) error {
 	cmdFunc, ok := c.registeredCommands[cmd.Name]
 	if !ok {
 		return fmt.Errorf("unknown command %q", cmd.Name)
 	}
 
-	return cmdFunc(s, cmd)
-
+	return cmdFunc(ctx, s, cmd)
 }
 
-func (c *commands) register(Name string, f func(*state, command) error) {
-	c.registeredCommands[Name] = f
+func (c *commands) register(name string, f handlerFunc) {
+	c.registeredCommands[name] = f
 }

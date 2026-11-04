@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/danielakinremi1-dev/RSS_feed_aggregator/internal/database"
 	"golang.org/x/sync/errgroup"
@@ -40,8 +41,14 @@ func scrapeBatch(ctx context.Context, s *state, workers int) {
 	_ = g.Wait() // workers always return nil
 }
 
+// feedTimeout bounds the whole fetch-and-store of one feed.
+const feedTimeout = 30 * time.Second
+
 // scrapeFeed fetches one feed and stores any posts not already saved.
 func scrapeFeed(ctx context.Context, s *state, feed database.Feed) error {
+	ctx, cancel := context.WithTimeout(ctx, feedTimeout)
+	defer cancel()
+
 	fetched, err := fetchFeed(ctx, feed.Url)
 	if err != nil {
 		return fmt.Errorf("fetch: %w", err)

@@ -10,7 +10,7 @@ import (
 
 const defaultBrowseLimit = 10
 
-func handlerBrowse(s *state, cmd command, user database.User) error {
+func handlerBrowse(ctx context.Context, s *state, cmd command, user database.User) error {
 
 	limit := int64(defaultBrowseLimit)
 	if len(cmd.Args) > 0 {
@@ -30,7 +30,7 @@ func handlerBrowse(s *state, cmd command, user database.User) error {
 		Limit:  int32(limit),
 	}
 
-	posts, err := s.db.GetPostsForUser(context.Background(), queryArgs)
+	posts, err := s.db.GetPostsForUser(ctx, queryArgs)
 	if err != nil {
 		return fmt.Errorf("browse: get posts for %q: %w", user.Name, err)
 	}

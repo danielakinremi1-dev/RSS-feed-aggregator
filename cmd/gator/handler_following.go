@@ -7,9 +7,9 @@ import (
 	"github.com/danielakinremi1-dev/RSS_feed_aggregator/internal/database"
 )
 
-func handlerFollowing(s *state, cmd command, user database.User) error {
+func handlerFollowing(ctx context.Context, s *state, cmd command, user database.User) error {
 
-	feedFollows, err := s.db.GetFeedFollowsForUser(context.Background(), user.ID)
+	feedFollows, err := s.db.GetFeedFollowsForUser(ctx, user.ID)
 	if err != nil {
 		return fmt.Errorf("list feed follows for %q: %w", user.Name, err)
 	}

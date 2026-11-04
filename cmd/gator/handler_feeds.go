@@ -7,9 +7,9 @@ import (
 	"text/tabwriter"
 )
 
-func handlerFeeds(s *state, cmd command) error {
+func handlerFeeds(ctx context.Context, s *state, cmd command) error {
 
-	feeds, err := s.db.GetFeeds(context.Background())
+	feeds, err := s.db.GetFeeds(ctx)
 	if err != nil {
 		return fmt.Errorf("list feeds: %w", err)
 	}

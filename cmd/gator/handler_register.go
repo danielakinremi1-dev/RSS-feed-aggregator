@@ -7,21 +7,21 @@ import (
 	"fmt"
 )
 
-func handlerRegister(s *state, cmd command) error {
+func handlerRegister(ctx context.Context, s *state, cmd command) error {
 	if len(cmd.Args) == 0 {
 		return errors.New("usage: register <name>")
 	}
 
 	name := cmd.Args[0]
 
-	_, err := s.db.GetUser(context.Background(), name)
+	_, err := s.db.GetUser(ctx, name)
 	if err == nil {
 		return fmt.Errorf("user %q is already registered", name)
 	} else if !errors.Is(err, sql.ErrNoRows) {
 		return fmt.Errorf("register %q: check existing user: %w", name, err)
 	}
 
-	user, err := s.db.CreateUser(context.Background(), name)
+	user, err := s.db.CreateUser(ctx, name)
 	if err != nil {
 		return fmt.Errorf("register %q: %w", name, err)
 	}

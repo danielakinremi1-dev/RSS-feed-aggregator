@@ -8,14 +8,14 @@ import (
 	"github.com/danielakinremi1-dev/RSS_feed_aggregator/internal/database"
 )
 
-func handlerFollow(s *state, cmd command, user database.User) error {
+func handlerFollow(ctx context.Context, s *state, cmd command, user database.User) error {
 	if len(cmd.Args) < 1 {
 		return errors.New("usage: follow <url>")
 	}
 
 	url := cmd.Args[0]
 
-	feedID, err := s.db.GetFeedID(context.Background(), url)
+	feedID, err := s.db.GetFeedID(ctx, url)
 	if err != nil {
 		return fmt.Errorf("follow %q: look up feed: %w", url, err)
 	}
@@ -25,7 +25,7 @@ func handlerFollow(s *state, cmd command, user database.User) error {
 		FeedID: feedID,
 	}
 
-	feedFollow, err := s.db.CreateFeedFollow(context.Background(), queryArgs)
+	feedFollow, err := s.db.CreateFeedFollow(ctx, queryArgs)
 	if err != nil {
 		return fmt.Errorf("follow %q: %w", url, err)
 	}

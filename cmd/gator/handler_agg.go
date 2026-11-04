@@ -12,7 +12,7 @@ import (
 
 const aggUsage = "usage: agg [--workers N] <time_between_reqs>, e.g. agg --workers 4 30s"
 
-func handlerAgg(s *state, cmd command) error {
+func handlerAgg(ctx context.Context, s *state, cmd command) error {
 	fs := flag.NewFlagSet("agg", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 	workers := fs.Int("workers", 4, "number of feeds to fetch concurrently per tick")
@@ -31,10 +31,26 @@ func handlerAgg(s *state, cmd command) error {
 		return fmt.Errorf("agg: invalid duration %q: %w", fs.Arg(0), err)
 	}
 
-	log.Printf("Collecting feeds every %s with %d workers...", timeBetweenRequests, *workers)
+	log.Printf("Collecting feeds every %s with %d workers (Ctrl-C to stop)...", timeBetweenRequests, *workers)
+
+	go func() {
+		<-ctx.Done()
+		log.Println("Interrupt received: finishing in-flight feeds (Ctrl-C again to force quit)")
+	}()
 
 	ticker := time.NewTicker(timeBetweenRequests)
-	for ; ; <-ticker.C {
-		scrapeBatch(context.Background(), s, *workers)
+	defer ticker.Stop()
+	for {
+		// A batch that has started is allowed to finish: WithoutCancel keeps
+		// ctx's values but ignores the shutdown signal, and each feed gets its
+		// own timeout so shutdown can't hang on a slow server.
+		scrapeBatch(context.WithoutCancel(ctx), s, *workers)
+
+		select {
+		case <-ctx.Done():
+			log.Println("Shutdown complete")
+			return nil
+		case <-ticker.C:
+		}
 	}
 }

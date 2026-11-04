@@ -6,14 +6,14 @@ import (
 	"fmt"
 )
 
-func handlerLogin(s *state, cmd command) error {
+func handlerLogin(ctx context.Context, s *state, cmd command) error {
 	if len(cmd.Args) == 0 {
 		return errors.New("usage: login <name>")
 	}
 
 	name := cmd.Args[0]
 
-	_, err := s.db.GetUser(context.Background(), name)
+	_, err := s.db.GetUser(ctx, name)
 	if err != nil {
 		return fmt.Errorf("login %q: look up user: %w", name, err)
 	}
