@@ -11,6 +11,54 @@ import (
 	"github.com/google/uuid"
 )
 
+const claimFeedsToFetch = `-- name: ClaimFeedsToFetch :many
+UPDATE feeds
+SET last_fetched_at = now(), updated_at = now()
+WHERE id IN (
+    SELECT id FROM feeds
+    ORDER BY last_fetched_at ASC NULLS FIRST
+    LIMIT $1
+    FOR UPDATE SKIP LOCKED
+)
+RETURNING id, created_at, updated_at, name, url, user_id, last_fetched_at
+`
+
+// Atomically claims up to $1 of the stalest feeds by stamping last_fetched_at.
+// FOR UPDATE SKIP LOCKED makes concurrent `agg` processes claim disjoint sets:
+// rows another claim has locked are skipped instead of waited on. This must be
+// a single statement; a bare SELECT ... FOR UPDATE releases its locks as soon
+// as it returns (autocommit), before any fetching happens.
+func (q *Queries) ClaimFeedsToFetch(ctx context.Context, limit int32) ([]Feed, error) {
+	rows, err := q.db.QueryContext(ctx, claimFeedsToFetch, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Feed
+	for rows.Next() {
+		var i Feed
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Name,
+			&i.Url,
+			&i.UserID,
+			&i.LastFetchedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const createFeed = `-- name: CreateFeed :one
 INSERT INTO feeds (name, url, user_id)
 VALUES ($1, $2, $3)
@@ -87,39 +135,4 @@ func (q *Queries) GetFeeds(ctx context.Context) ([]GetFeedsRow, error) {
 		return nil, err
 	}
 	return items, nil
-}
-
-const getNextFeedToFetch = `-- name: GetNextFeedToFetch :one
-
-SELECT id, created_at, updated_at, name, url, user_id, last_fetched_at
-FROM feeds 
-ORDER BY last_fetched_at ASC NULLS FIRST
-LIMIT 1
-`
-
-func (q *Queries) GetNextFeedToFetch(ctx context.Context) (Feed, error) {
-	row := q.db.QueryRowContext(ctx, getNextFeedToFetch)
-	var i Feed
-	err := row.Scan(
-		&i.ID,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.Name,
-		&i.Url,
-		&i.UserID,
-		&i.LastFetchedAt,
-	)
-	return i, err
-}
-
-const markFeedFetched = `-- name: MarkFeedFetched :exec
-
-UPDATE feeds
-SET updated_at = NOW(), last_fetched_at = NOW()
-WHERE id = $1
-`
-
-func (q *Queries) MarkFeedFetched(ctx context.Context, id uuid.UUID) error {
-	_, err := q.db.ExecContext(ctx, markFeedFetched, id)
-	return err
 }

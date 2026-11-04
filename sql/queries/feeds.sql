@@ -16,15 +16,18 @@ users.name as creator
 FROM feeds
 INNER JOIN users on users.id = feeds.user_id;
 
--- name: MarkFeedFetched :exec
-
+-- name: ClaimFeedsToFetch :many
+-- Atomically claims up to $1 of the stalest feeds by stamping last_fetched_at.
+-- FOR UPDATE SKIP LOCKED makes concurrent `agg` processes claim disjoint sets:
+-- rows another claim has locked are skipped instead of waited on. This must be
+-- a single statement; a bare SELECT ... FOR UPDATE releases its locks as soon
+-- as it returns (autocommit), before any fetching happens.
 UPDATE feeds
-SET updated_at = NOW(), last_fetched_at = NOW()
-WHERE id = $1;
-
--- name: GetNextFeedToFetch :one
-
-SELECT *
-FROM feeds 
-ORDER BY last_fetched_at ASC NULLS FIRST
-LIMIT 1;
+SET last_fetched_at = now(), updated_at = now()
+WHERE id IN (
+    SELECT id FROM feeds
+    ORDER BY last_fetched_at ASC NULLS FIRST
+    LIMIT $1
+    FOR UPDATE SKIP LOCKED
+)
+RETURNING *;

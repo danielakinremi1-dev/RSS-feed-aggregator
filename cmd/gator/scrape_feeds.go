@@ -3,70 +3,67 @@ package main
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 
 	"github.com/danielakinremi1-dev/RSS_feed_aggregator/internal/database"
+	"golang.org/x/sync/errgroup"
 )
 
-func scrapeFeeds(s *state) {
-
-	nextFeed, err := s.db.GetNextFeedToFetch(context.Background())
+// scrapeBatch claims up to `workers` of the stalest feeds and scrapes them
+// concurrently, at most `workers` at a time. It returns once every claimed
+// feed has been processed.
+func scrapeBatch(ctx context.Context, s *state, workers int) {
+	feeds, err := s.db.ClaimFeedsToFetch(ctx, int32(workers))
 	if err != nil {
-		log.Println("Couldn't get next feeds to fetch", err)
+		log.Printf("Couldn't claim feeds to fetch: %v", err)
 		return
 	}
-	log.Println("Found a feed to fetch!")
-
-	err = s.db.MarkFeedFetched(context.Background(), nextFeed.ID)
-	if err != nil {
-		log.Printf("Couldn't mark feed %s fetched: %v\n", nextFeed.Name, err)
+	if len(feeds) == 0 {
+		log.Println("No feeds to fetch")
 		return
 	}
+	log.Printf("Claimed %d feed(s)", len(feeds))
 
-	fetched, err := fetchFeed(context.Background(), nextFeed.Url)
+	var g errgroup.Group
+	g.SetLimit(workers)
+	for _, feed := range feeds {
+		g.Go(func() error {
+			if err := scrapeFeed(ctx, s, feed); err != nil {
+				log.Printf("Feed %q: %v", feed.Name, err)
+			}
+			// Never return the error: that would make one bad feed look like a
+			// failed batch. Each feed's outcome is handled on its own.
+			return nil
+		})
+	}
+	_ = g.Wait() // workers always return nil
+}
+
+// scrapeFeed fetches one feed and stores any posts not already saved.
+func scrapeFeed(ctx context.Context, s *state, feed database.Feed) error {
+	fetched, err := fetchFeed(ctx, feed.Url)
 	if err != nil {
-		log.Printf("Couldn't collect feed %s: %v\n", nextFeed.Name, err)
-		return
+		return fmt.Errorf("fetch: %w", err)
 	}
 
 	var newPosts, existing, invalid int
 	for _, item := range fetched.Items {
-
-		if len(item.Link) < 1 {
+		if item.Link == "" {
 			invalid++
 			continue
 		}
 
 		publishTime, ok := parsePubDate(item.PubDate)
-		itemPublished := sql.NullTime{Time: publishTime, Valid: ok}
-
-		itemDescription := sql.NullString{
-			String: item.Description,
-			Valid:  true,
-		}
-		if len(item.Description) < 1 {
-			itemDescription.Valid = false
-		}
-
-		itemTitle := sql.NullString{
-			String: item.Title,
-			Valid:  true,
-		}
-		if len(item.Title) < 1 {
-			itemTitle.Valid = false
-		}
-
-		queryArgs := database.CreatePostParams{
-			Title:       itemTitle,
+		inserted, err := s.db.CreatePost(ctx, database.CreatePostParams{
+			Title:       sql.NullString{String: item.Title, Valid: item.Title != ""},
 			Url:         item.Link,
-			Description: itemDescription,
-			PublishedAt: itemPublished,
-			FeedID:      nextFeed.ID,
-		}
-
-		inserted, err := s.db.CreatePost(context.Background(), queryArgs)
+			Description: sql.NullString{String: item.Description, Valid: item.Description != ""},
+			PublishedAt: sql.NullTime{Time: publishTime, Valid: ok},
+			FeedID:      feed.ID,
+		})
 		if err != nil {
-			log.Printf("Couldn't create post: %v", err)
+			log.Printf("Feed %q: couldn't save post %s: %v", feed.Name, item.Link, err)
 			continue
 		}
 		if inserted == 0 {
@@ -77,5 +74,6 @@ func scrapeFeeds(s *state) {
 	}
 
 	log.Printf("Feed %q: %d new, %d already stored, %d invalid (of %d items)",
-		nextFeed.Name, newPosts, existing, invalid, len(fetched.Items))
+		feed.Name, newPosts, existing, invalid, len(fetched.Items))
+	return nil
 }
