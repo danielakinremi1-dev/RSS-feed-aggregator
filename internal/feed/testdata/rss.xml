@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>Example &amp;amp; Friends</title>
+    <link>https://example.com/</link>
+    <description>An example RSS feed</description>
+    <item>
+      <title>First post</title>
+      <link>https://example.com/first</link>
+      <description>&lt;p&gt;Hello &amp;amp; welcome&lt;/p&gt;</description>
+      <pubDate>Tue, 3 Nov 2026 09:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>Dated with dc:date only</title>
+      <link>https://example.com/dc-date</link>
+      <dc:date>2026-11-02T08:30:00Z</dc:date>
+    </item>
+    <item>
+      <title>No link, so not storable</title>
+      <description>Missing link</description>
+    </item>
+  </channel>
+</rss>
