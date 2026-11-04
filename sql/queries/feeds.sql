@@ -11,8 +11,8 @@ WHERE url = $1 LIMIT 1;
 
 -- name: GetFeeds :many
 
-SELECT feeds.name, feeds.url, 
-users.name as creator
+SELECT feeds.name, feeds.url, users.name AS creator,
+    feeds.consecutive_failures, feeds.next_fetch_at
 FROM feeds
 INNER JOIN users on users.id = feeds.user_id;
 
@@ -26,8 +26,23 @@ UPDATE feeds
 SET last_fetched_at = now(), updated_at = now()
 WHERE id IN (
     SELECT id FROM feeds
+    WHERE next_fetch_at IS NULL OR next_fetch_at <= now()
     ORDER BY last_fetched_at ASC NULLS FIRST
     LIMIT $1
     FOR UPDATE SKIP LOCKED
 )
 RETURNING *;
+
+-- name: RecordFeedSuccess :exec
+UPDATE feeds
+SET consecutive_failures = 0, last_error = NULL, next_fetch_at = NULL, updated_at = now()
+WHERE id = $1;
+
+-- name: RecordFeedFailure :exec
+-- The delay is computed in Go (exponential backoff); the timestamp uses the DB clock.
+UPDATE feeds
+SET consecutive_failures = consecutive_failures + 1,
+    last_error = sqlc.arg(last_error),
+    next_fetch_at = now() + make_interval(secs => sqlc.arg(retry_after_seconds)::float8),
+    updated_at = now()
+WHERE id = sqlc.arg(id);

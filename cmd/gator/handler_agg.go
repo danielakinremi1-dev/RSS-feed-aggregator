@@ -44,7 +44,7 @@ func handlerAgg(ctx context.Context, s *state, cmd command) error {
 		// A batch that has started is allowed to finish: WithoutCancel keeps
 		// ctx's values but ignores the shutdown signal, and each feed gets its
 		// own timeout so shutdown can't hang on a slow server.
-		scrapeBatch(context.WithoutCancel(ctx), s, *workers)
+		scrapeBatch(context.WithoutCancel(ctx), s, *workers, timeBetweenRequests)
 
 		select {
 		case <-ctx.Done():

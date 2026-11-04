@@ -11,10 +11,10 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-// scrapeBatch claims up to `workers` of the stalest feeds and scrapes them
+// scrapeBatch claims up to `workers` of the stalest due feeds and scrapes them
 // concurrently, at most `workers` at a time. It returns once every claimed
-// feed has been processed.
-func scrapeBatch(ctx context.Context, s *state, workers int) {
+// feed has been processed. Failing feeds are backed off from `interval`.
+func scrapeBatch(ctx context.Context, s *state, workers int, interval time.Duration) {
 	feeds, err := s.db.ClaimFeedsToFetch(ctx, int32(workers))
 	if err != nil {
 		log.Printf("Couldn't claim feeds to fetch: %v", err)
@@ -30,15 +30,36 @@ func scrapeBatch(ctx context.Context, s *state, workers int) {
 	g.SetLimit(workers)
 	for _, feed := range feeds {
 		g.Go(func() error {
-			if err := scrapeFeed(ctx, s, feed); err != nil {
-				log.Printf("Feed %q: %v", feed.Name, err)
-			}
+			recordOutcome(ctx, s, feed, interval, scrapeFeed(ctx, s, feed))
 			// Never return the error: that would make one bad feed look like a
 			// failed batch. Each feed's outcome is handled on its own.
 			return nil
 		})
 	}
 	_ = g.Wait() // workers always return nil
+}
+
+// recordOutcome resets a feed's failure count on success, or bumps it and
+// schedules the next attempt with exponential backoff on failure.
+func recordOutcome(ctx context.Context, s *state, feed database.Feed, interval time.Duration, scrapeErr error) {
+	if scrapeErr == nil {
+		if err := s.db.RecordFeedSuccess(ctx, feed.ID); err != nil {
+			log.Printf("Feed %q: couldn't record success: %v", feed.Name, err)
+		}
+		return
+	}
+
+	failures := int(feed.ConsecutiveFailures) + 1
+	wait := backoff(interval, failures)
+	log.Printf("Feed %q: %v (failure #%d, retrying in %s)", feed.Name, scrapeErr, failures, wait)
+	err := s.db.RecordFeedFailure(ctx, database.RecordFeedFailureParams{
+		ID:                feed.ID,
+		LastError:         sql.NullString{String: scrapeErr.Error(), Valid: true},
+		RetryAfterSeconds: wait.Seconds(),
+	})
+	if err != nil {
+		log.Printf("Feed %q: couldn't record failure: %v", feed.Name, err)
+	}
 }
 
 // feedTimeout bounds the whole fetch-and-store of one feed.

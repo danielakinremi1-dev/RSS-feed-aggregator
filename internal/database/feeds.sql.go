@@ -7,6 +7,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/google/uuid"
 )
@@ -16,11 +17,12 @@ UPDATE feeds
 SET last_fetched_at = now(), updated_at = now()
 WHERE id IN (
     SELECT id FROM feeds
+    WHERE next_fetch_at IS NULL OR next_fetch_at <= now()
     ORDER BY last_fetched_at ASC NULLS FIRST
     LIMIT $1
     FOR UPDATE SKIP LOCKED
 )
-RETURNING id, created_at, updated_at, name, url, user_id, last_fetched_at
+RETURNING id, created_at, updated_at, name, url, user_id, last_fetched_at, last_error, consecutive_failures, next_fetch_at
 `
 
 // Atomically claims up to $1 of the stalest feeds by stamping last_fetched_at.
@@ -45,6 +47,9 @@ func (q *Queries) ClaimFeedsToFetch(ctx context.Context, limit int32) ([]Feed, e
 			&i.Url,
 			&i.UserID,
 			&i.LastFetchedAt,
+			&i.LastError,
+			&i.ConsecutiveFailures,
+			&i.NextFetchAt,
 		); err != nil {
 			return nil, err
 		}
@@ -62,7 +67,7 @@ func (q *Queries) ClaimFeedsToFetch(ctx context.Context, limit int32) ([]Feed, e
 const createFeed = `-- name: CreateFeed :one
 INSERT INTO feeds (name, url, user_id)
 VALUES ($1, $2, $3)
-RETURNING id, created_at, updated_at, name, url, user_id, last_fetched_at
+RETURNING id, created_at, updated_at, name, url, user_id, last_fetched_at, last_error, consecutive_failures, next_fetch_at
 `
 
 type CreateFeedParams struct {
@@ -82,6 +87,9 @@ func (q *Queries) CreateFeed(ctx context.Context, arg CreateFeedParams) (Feed, e
 		&i.Url,
 		&i.UserID,
 		&i.LastFetchedAt,
+		&i.LastError,
+		&i.ConsecutiveFailures,
+		&i.NextFetchAt,
 	)
 	return i, err
 }
@@ -102,16 +110,18 @@ func (q *Queries) GetFeedID(ctx context.Context, url string) (uuid.UUID, error) 
 
 const getFeeds = `-- name: GetFeeds :many
 
-SELECT feeds.name, feeds.url, 
-users.name as creator
+SELECT feeds.name, feeds.url, users.name AS creator,
+    feeds.consecutive_failures, feeds.next_fetch_at
 FROM feeds
 INNER JOIN users on users.id = feeds.user_id
 `
 
 type GetFeedsRow struct {
-	Name    string
-	Url     string
-	Creator string
+	Name                string
+	Url                 string
+	Creator             string
+	ConsecutiveFailures int32
+	NextFetchAt         sql.NullTime
 }
 
 func (q *Queries) GetFeeds(ctx context.Context) ([]GetFeedsRow, error) {
@@ -123,7 +133,13 @@ func (q *Queries) GetFeeds(ctx context.Context) ([]GetFeedsRow, error) {
 	var items []GetFeedsRow
 	for rows.Next() {
 		var i GetFeedsRow
-		if err := rows.Scan(&i.Name, &i.Url, &i.Creator); err != nil {
+		if err := rows.Scan(
+			&i.Name,
+			&i.Url,
+			&i.Creator,
+			&i.ConsecutiveFailures,
+			&i.NextFetchAt,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -135,4 +151,36 @@ func (q *Queries) GetFeeds(ctx context.Context) ([]GetFeedsRow, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const recordFeedFailure = `-- name: RecordFeedFailure :exec
+UPDATE feeds
+SET consecutive_failures = consecutive_failures + 1,
+    last_error = $1,
+    next_fetch_at = now() + make_interval(secs => $2::float8),
+    updated_at = now()
+WHERE id = $3
+`
+
+type RecordFeedFailureParams struct {
+	LastError         sql.NullString
+	RetryAfterSeconds float64
+	ID                uuid.UUID
+}
+
+// The delay is computed in Go (exponential backoff); the timestamp uses the DB clock.
+func (q *Queries) RecordFeedFailure(ctx context.Context, arg RecordFeedFailureParams) error {
+	_, err := q.db.ExecContext(ctx, recordFeedFailure, arg.LastError, arg.RetryAfterSeconds, arg.ID)
+	return err
+}
+
+const recordFeedSuccess = `-- name: RecordFeedSuccess :exec
+UPDATE feeds
+SET consecutive_failures = 0, last_error = NULL, next_fetch_at = NULL, updated_at = now()
+WHERE id = $1
+`
+
+func (q *Queries) RecordFeedSuccess(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, recordFeedSuccess, id)
+	return err
 }

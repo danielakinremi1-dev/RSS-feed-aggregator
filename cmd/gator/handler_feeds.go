@@ -20,9 +20,16 @@ func handlerFeeds(ctx context.Context, s *state, cmd command) error {
 	}
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(w, "NAME\tURL\tADDED BY")
+	fmt.Fprintln(w, "NAME\tURL\tADDED BY\tSTATUS")
 	for _, feed := range feeds {
-		fmt.Fprintf(w, "%s\t%s\t%s\n", feed.Name, feed.Url, feed.Creator)
+		status := "ok"
+		if feed.ConsecutiveFailures > 0 {
+			status = fmt.Sprintf("%d failure(s)", feed.ConsecutiveFailures)
+			if feed.NextFetchAt.Valid {
+				status += ", retry " + feed.NextFetchAt.Time.Local().Format("Jan 2 15:04")
+			}
+		}
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", feed.Name, feed.Url, feed.Creator, status)
 	}
 	return w.Flush()
 }
