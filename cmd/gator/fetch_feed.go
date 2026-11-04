@@ -26,6 +26,12 @@ type RSSItem struct {
 	PubDate     string `xml:"pubDate"`
 }
 
+// maxFeedBytes caps how much of a response body we read.
+const maxFeedBytes = 10 << 20 // 10 MB
+
+// httpClient is shared so connections are reused across fetches.
+var httpClient = &http.Client{Timeout: 10 * time.Second}
+
 func fetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error) {
 
 	req, err := http.NewRequestWithContext(ctx, "GET", feedURL, nil)
@@ -34,22 +40,25 @@ func fetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error) {
 	}
 
 	req.Header.Set("User-Agent", "gator")
-	client := http.Client{Timeout: 10 * time.Second}
 
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return &RSSFeed{}, err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode > 299 {
 		return &RSSFeed{}, fmt.Errorf("bad response status: %v", resp.StatusCode)
 	}
 
-	defer resp.Body.Close()
-
-	xmlData, err := io.ReadAll(resp.Body)
+	// Read one byte past the limit so an oversized body is detectable
+	// rather than silently truncated into invalid XML.
+	xmlData, err := io.ReadAll(io.LimitReader(resp.Body, maxFeedBytes+1))
 	if err != nil {
 		return &RSSFeed{}, err
+	}
+	if len(xmlData) > maxFeedBytes {
+		return &RSSFeed{}, fmt.Errorf("feed body exceeds %d bytes", maxFeedBytes)
 	}
 
 	RSSResp := RSSFeed{}
