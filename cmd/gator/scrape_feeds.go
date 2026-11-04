@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"log"
-	"strings"
 	"time"
 
 	"github.com/danielakinremi1-dev/RSS_feed_aggregator/internal/database"
@@ -87,13 +86,13 @@ func scrapeFeeds(s *state) {
 			FeedID:      nextFeed.ID,
 		}
 
-		_, err = s.db.CreatePost(context.Background(), queryArgs)
+		inserted, err := s.db.CreatePost(context.Background(), queryArgs)
 		if err != nil {
-			if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
-				continue
-			}
 			log.Printf("Couldn't create post: %v", err)
 			continue
+		}
+		if inserted == 0 {
+			continue // already stored
 		}
 		log.Printf("Feed %s collected, %v posts found", nextFeed.Name, len(RSSFeed.Channel.Item))
 	}
