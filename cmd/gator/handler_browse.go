@@ -8,13 +8,19 @@ import (
 	"github.com/danielakinremi1-dev/RSS_feed_aggregator/internal/database"
 )
 
+const defaultBrowseLimit = 10
+
 func handlerBrowse(s *state, cmd command, user database.User) error {
 
-	limit := 2
+	limit := int64(defaultBrowseLimit)
 	if len(cmd.Args) > 0 {
-		newLimit, err := strconv.Atoi(cmd.Args[0])
+		// Parse as 32-bit: the query takes an int32, so larger values would overflow.
+		newLimit, err := strconv.ParseInt(cmd.Args[0], 10, 32)
 		if err != nil {
 			return fmt.Errorf("browse: invalid limit %q: %w", cmd.Args[0], err)
+		}
+		if newLimit <= 0 {
+			return fmt.Errorf("browse: limit must be greater than 0, got %d", newLimit)
 		}
 		limit = newLimit
 	}
