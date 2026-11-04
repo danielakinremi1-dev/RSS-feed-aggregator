@@ -26,6 +26,10 @@ func main() {
 // run holds everything main would, but returns errors so deferred cleanup
 // (closing the DB, releasing the signal handler) runs before the process exits.
 func run(args []string) error {
+	if cli.IsVersion(args) {
+		cli.PrintVersion(os.Stdout)
+		return nil
+	}
 	if cli.IsHelp(args) {
 		if len(args) == 0 {
 			cli.PrintHelp(os.Stderr)

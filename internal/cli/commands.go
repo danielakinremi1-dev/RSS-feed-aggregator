@@ -52,6 +52,14 @@ func IsHelp(args []string) bool {
 	return false
 }
 
+// IsVersion reports whether args ask for the version (also needs no config).
+func IsVersion(args []string) bool {
+	return len(args) > 0 && (args[0] == "version" || args[0] == "--version")
+}
+
+// PrintVersion writes the version line to out.
+func PrintVersion(out io.Writer) { fmt.Fprintln(out, "gator", version()) }
+
 // PrintHelp writes the list of commands to out.
 func PrintHelp(out io.Writer) { newCommands().printHelp(out) }
 
@@ -68,6 +76,10 @@ func newCommands() *commands {
 	c.register("browse", "[limit]", "Show the newest posts from feeds you follow (default 10)", middlewareLoggedIn(handlerBrowse))
 	c.register("agg", "[--workers N] <interval>", "Fetch feeds every interval, N at a time (default 4)", handlerAgg)
 	c.register("reset", "--force", "Delete ALL users, feeds, follows and posts", handlerReset)
+	c.register("version", "", "Print the gator version", func(context.Context, *State, command) error {
+		PrintVersion(os.Stdout)
+		return nil
+	})
 	c.register("help", "", "Show this help", func(context.Context, *State, command) error {
 		c.printHelp(os.Stdout)
 		return nil
