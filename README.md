@@ -7,7 +7,7 @@ A multi-player command line tool for aggregating RSS feeds and viewing the posts
 Make sure you have the latest [Go toolchain](https://golang.org/dl/) installed as well as a local Postgres database. You can then install `gator` with:
 
 ```sh
-go install ...
+go install github.com/danielakinremi1-dev/RSS_feed_aggregator/cmd/gator@latest
 ```
 
 ## Config
@@ -33,7 +33,7 @@ gator register <name>
 Add a feed:
 
 ```sh
-gator addfeed <url>
+gator addfeed <name> <url>
 ```
 
 Start the aggregator:
