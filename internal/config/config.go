@@ -12,9 +12,9 @@ type Config struct {
 	CurrentUserName string `json:"current_user_name"`
 }
 
-func (c Config) SetUser(userName string) error {
+func (c *Config) SetUser(userName string) error {
 	c.CurrentUserName = userName
-	if err := write(c); err != nil {
+	if err := write(*c); err != nil {
 		return err
 	}
 	return nil
