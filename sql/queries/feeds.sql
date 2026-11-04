@@ -17,13 +17,21 @@ FROM feeds
 INNER JOIN users on users.id = feeds.user_id;
 
 -- name: ClaimFeedsToFetch :many
--- Atomically claims up to $1 of the stalest feeds by stamping last_fetched_at.
--- FOR UPDATE SKIP LOCKED makes concurrent `agg` processes claim disjoint sets:
--- rows another claim has locked are skipped instead of waited on. This must be
--- a single statement; a bare SELECT ... FOR UPDATE releases its locks as soon
--- as it returns (autocommit), before any fetching happens.
+-- Atomically claims up to $1 of the stalest due feeds.
+--
+-- FOR UPDATE SKIP LOCKED makes concurrent `agg` processes skip rows another
+-- claim is holding instead of waiting on them. It must be one statement: a
+-- bare SELECT ... FOR UPDATE releases its locks as soon as it returns.
+--
+-- Setting next_fetch_at is a lease, and it is what makes claims disjoint:
+-- if another claim commits a row after this statement's snapshot, Postgres
+-- re-checks only the WHERE clause against the committed row, and the future
+-- next_fetch_at now fails it. It also lets a feed be retried if the claiming
+-- process dies mid-fetch. RecordFeedSuccess/RecordFeedFailure overwrite it.
 UPDATE feeds
-SET last_fetched_at = now(), updated_at = now()
+SET last_fetched_at = now(),
+    next_fetch_at = now() + interval '5 minutes',
+    updated_at = now()
 WHERE id IN (
     SELECT id FROM feeds
     WHERE next_fetch_at IS NULL OR next_fetch_at <= now()
