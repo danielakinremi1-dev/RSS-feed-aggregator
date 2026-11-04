@@ -22,7 +22,7 @@ WHERE id IN (
     LIMIT $1
     FOR UPDATE SKIP LOCKED
 )
-RETURNING id, created_at, updated_at, name, url, user_id, last_fetched_at, last_error, consecutive_failures, next_fetch_at
+RETURNING id, created_at, updated_at, name, url, user_id, last_fetched_at, last_error, consecutive_failures, next_fetch_at, etag, last_modified
 `
 
 // Atomically claims up to $1 of the stalest feeds by stamping last_fetched_at.
@@ -50,6 +50,8 @@ func (q *Queries) ClaimFeedsToFetch(ctx context.Context, limit int32) ([]Feed, e
 			&i.LastError,
 			&i.ConsecutiveFailures,
 			&i.NextFetchAt,
+			&i.Etag,
+			&i.LastModified,
 		); err != nil {
 			return nil, err
 		}
@@ -67,7 +69,7 @@ func (q *Queries) ClaimFeedsToFetch(ctx context.Context, limit int32) ([]Feed, e
 const createFeed = `-- name: CreateFeed :one
 INSERT INTO feeds (name, url, user_id)
 VALUES ($1, $2, $3)
-RETURNING id, created_at, updated_at, name, url, user_id, last_fetched_at, last_error, consecutive_failures, next_fetch_at
+RETURNING id, created_at, updated_at, name, url, user_id, last_fetched_at, last_error, consecutive_failures, next_fetch_at, etag, last_modified
 `
 
 type CreateFeedParams struct {
@@ -90,6 +92,8 @@ func (q *Queries) CreateFeed(ctx context.Context, arg CreateFeedParams) (Feed, e
 		&i.LastError,
 		&i.ConsecutiveFailures,
 		&i.NextFetchAt,
+		&i.Etag,
+		&i.LastModified,
 	)
 	return i, err
 }
@@ -176,11 +180,19 @@ func (q *Queries) RecordFeedFailure(ctx context.Context, arg RecordFeedFailurePa
 
 const recordFeedSuccess = `-- name: RecordFeedSuccess :exec
 UPDATE feeds
-SET consecutive_failures = 0, last_error = NULL, next_fetch_at = NULL, updated_at = now()
-WHERE id = $1
+SET consecutive_failures = 0, last_error = NULL, next_fetch_at = NULL,
+    etag = $1, last_modified = $2,
+    updated_at = now()
+WHERE id = $3
 `
 
-func (q *Queries) RecordFeedSuccess(ctx context.Context, id uuid.UUID) error {
-	_, err := q.db.ExecContext(ctx, recordFeedSuccess, id)
+type RecordFeedSuccessParams struct {
+	Etag         sql.NullString
+	LastModified sql.NullString
+	ID           uuid.UUID
+}
+
+func (q *Queries) RecordFeedSuccess(ctx context.Context, arg RecordFeedSuccessParams) error {
+	_, err := q.db.ExecContext(ctx, recordFeedSuccess, arg.Etag, arg.LastModified, arg.ID)
 	return err
 }

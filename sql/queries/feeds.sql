@@ -35,8 +35,10 @@ RETURNING *;
 
 -- name: RecordFeedSuccess :exec
 UPDATE feeds
-SET consecutive_failures = 0, last_error = NULL, next_fetch_at = NULL, updated_at = now()
-WHERE id = $1;
+SET consecutive_failures = 0, last_error = NULL, next_fetch_at = NULL,
+    etag = sqlc.narg(etag), last_modified = sqlc.narg(last_modified),
+    updated_at = now()
+WHERE id = sqlc.arg(id);
 
 -- name: RecordFeedFailure :exec
 -- The delay is computed in Go (exponential backoff); the timestamp uses the DB clock.

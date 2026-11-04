@@ -30,7 +30,8 @@ func scrapeBatch(ctx context.Context, s *state, workers int, interval time.Durat
 	g.SetLimit(workers)
 	for _, feed := range feeds {
 		g.Go(func() error {
-			recordOutcome(ctx, s, feed, interval, scrapeFeed(ctx, s, feed))
+			validators, err := scrapeFeed(ctx, s, feed)
+			recordOutcome(ctx, s, feed, interval, validators, err)
 			// Never return the error: that would make one bad feed look like a
 			// failed batch. Each feed's outcome is handled on its own.
 			return nil
@@ -41,9 +42,14 @@ func scrapeBatch(ctx context.Context, s *state, workers int, interval time.Durat
 
 // recordOutcome resets a feed's failure count on success, or bumps it and
 // schedules the next attempt with exponential backoff on failure.
-func recordOutcome(ctx context.Context, s *state, feed database.Feed, interval time.Duration, scrapeErr error) {
+func recordOutcome(ctx context.Context, s *state, feed database.Feed, interval time.Duration, validators cacheValidators, scrapeErr error) {
 	if scrapeErr == nil {
-		if err := s.db.RecordFeedSuccess(ctx, feed.ID); err != nil {
+		err := s.db.RecordFeedSuccess(ctx, database.RecordFeedSuccessParams{
+			ID:           feed.ID,
+			Etag:         sql.NullString{String: validators.ETag, Valid: validators.ETag != ""},
+			LastModified: sql.NullString{String: validators.LastModified, Valid: validators.LastModified != ""},
+		})
+		if err != nil {
 			log.Printf("Feed %q: couldn't record success: %v", feed.Name, err)
 		}
 		return
@@ -65,15 +71,25 @@ func recordOutcome(ctx context.Context, s *state, feed database.Feed, interval t
 // feedTimeout bounds the whole fetch-and-store of one feed.
 const feedTimeout = 30 * time.Second
 
-// scrapeFeed fetches one feed and stores any posts not already saved.
-func scrapeFeed(ctx context.Context, s *state, feed database.Feed) error {
+// scrapeFeed fetches one feed (conditionally, if we have validators from a
+// previous fetch) and stores any posts not already saved. It returns the
+// validators to remember for next time.
+func scrapeFeed(ctx context.Context, s *state, feed database.Feed) (cacheValidators, error) {
 	ctx, cancel := context.WithTimeout(ctx, feedTimeout)
 	defer cancel()
 
-	fetched, err := fetchFeed(ctx, feed.Url)
+	res, err := fetchFeed(ctx, feed.Url, cacheValidators{
+		ETag:         feed.Etag.String,
+		LastModified: feed.LastModified.String,
+	})
 	if err != nil {
-		return fmt.Errorf("fetch: %w", err)
+		return cacheValidators{}, fmt.Errorf("fetch: %w", err)
 	}
+	if res.NotModified {
+		log.Printf("Feed %q: not modified (304), skipped", feed.Name)
+		return res.Validators, nil
+	}
+	fetched := res.Feed
 
 	var newPosts, existing, invalid int
 	for _, item := range fetched.Items {
@@ -103,5 +119,5 @@ func scrapeFeed(ctx context.Context, s *state, feed database.Feed) error {
 
 	log.Printf("Feed %q: %d new, %d already stored, %d invalid (of %d items)",
 		feed.Name, newPosts, existing, invalid, len(fetched.Items))
-	return nil
+	return res.Validators, nil
 }

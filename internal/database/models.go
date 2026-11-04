@@ -22,6 +22,8 @@ type Feed struct {
 	LastError           sql.NullString
 	ConsecutiveFailures int32
 	NextFetchAt         sql.NullTime
+	Etag                sql.NullString
+	LastModified        sql.NullString
 }
 
 type FeedFollow struct {
