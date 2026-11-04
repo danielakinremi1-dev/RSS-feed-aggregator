@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 )
@@ -27,7 +28,7 @@ func Read() (Config, error) {
 
 	file, err := os.Open(fullPath)
 	if err != nil {
-		return Config{}, err
+		return Config{}, fmt.Errorf("open config: %w", err)
 	}
 	defer file.Close()
 
@@ -35,7 +36,7 @@ func Read() (Config, error) {
 	cfg := Config{}
 	err = decoder.Decode(&cfg)
 	if err != nil {
-		return Config{}, err
+		return Config{}, fmt.Errorf("decode config %s: %w", fullPath, err)
 	}
 
 	return cfg, nil
@@ -58,7 +59,7 @@ func write(cfg Config) error {
 
 	file, err := os.Create(fullPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("write config: %w", err)
 	}
 	defer file.Close()
 

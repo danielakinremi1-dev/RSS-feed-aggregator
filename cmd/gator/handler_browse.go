@@ -14,7 +14,7 @@ func handlerBrowse(s *state, cmd command, user database.User) error {
 	if len(cmd.Args) > 0 {
 		newLimit, err := strconv.Atoi(cmd.Args[0])
 		if err != nil {
-			return fmt.Errorf("Error parsing requested browse limit: %w", err)
+			return fmt.Errorf("browse: invalid limit %q: %w", cmd.Args[0], err)
 		}
 		limit = newLimit
 	}
@@ -26,7 +26,7 @@ func handlerBrowse(s *state, cmd command, user database.User) error {
 
 	posts, err := s.db.GetPostsForUser(context.Background(), queryArgs)
 	if err != nil {
-		return fmt.Errorf("Error getting user posts: %w", err)
+		return fmt.Errorf("browse: get posts for %q: %w", user.Name, err)
 	}
 
 	fmt.Printf("Found %d posts for user %s:\n", len(posts), user.Name)

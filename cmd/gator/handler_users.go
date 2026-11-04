@@ -9,7 +9,7 @@ func handlerUsers(s *state, cmd command) error {
 
 	users, err := s.db.GetUsers(context.Background())
 	if err != nil {
-		return fmt.Errorf("Error collecting user list: %w", err)
+		return fmt.Errorf("list users: %w", err)
 	}
 
 	for _, user := range users {

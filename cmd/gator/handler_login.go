@@ -15,12 +15,12 @@ func handlerLogin(s *state, cmd command) error {
 
 	_, err := s.db.GetUser(context.Background(), name)
 	if err != nil {
-		return fmt.Errorf("couldn't find user: %w", err)
+		return fmt.Errorf("login %q: look up user: %w", name, err)
 	}
 
 	err = s.cfg.SetUser(name)
 	if err != nil {
-		return fmt.Errorf("couldn't set current user: %w", err)
+		return fmt.Errorf("login %q: set current user: %w", name, err)
 	}
 
 	fmt.Println("User switched successfully!")

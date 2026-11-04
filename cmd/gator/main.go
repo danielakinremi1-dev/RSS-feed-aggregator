@@ -20,12 +20,12 @@ func main() {
 
 	cfg, err := config.Read()
 	if err != nil {
-		log.Fatalf("error reading config: %v", err)
+		log.Fatalf("read config: %v", err)
 	}
 
 	db, err := sql.Open("postgres", cfg.DBURL)
 	if err != nil {
-		log.Fatalf("error connecting to database: %v", err)
+		log.Fatalf("open database: %v", err)
 	}
 
 	dbQueries := database.New(db)
