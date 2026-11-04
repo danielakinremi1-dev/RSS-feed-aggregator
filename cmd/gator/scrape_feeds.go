@@ -39,26 +39,8 @@ func scrapeFeeds(s *state) {
 			continue
 		}
 
-		itemPublished := sql.NullTime{
-			Valid: true,
-		}
-
-		publishTime, err := time.Parse(time.RFC1123Z, item.PubDate)
-		if err == nil {
-			itemPublished.Time = publishTime
-		} else {
-			publishTime, err = time.Parse(time.RFC1123, item.PubDate)
-			if err == nil {
-				itemPublished.Time = publishTime
-			} else {
-				publishTime, err = time.Parse(time.RFC3339, item.PubDate)
-				if err == nil {
-					itemPublished.Time = publishTime
-				} else {
-					itemPublished.Valid = false
-				}
-			}
-		}
+		publishTime, ok := parsePubDate(item.PubDate)
+		itemPublished := sql.NullTime{Time: publishTime, Valid: ok}
 
 		itemDescription := sql.NullString{
 			String: item.Description,
