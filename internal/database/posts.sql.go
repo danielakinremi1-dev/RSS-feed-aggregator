@@ -14,15 +14,12 @@ import (
 )
 
 const createPost = `-- name: CreatePost :execrows
-INSERT INTO posts (id, created_at, updated_at, title, url, description, published_at, feed_id)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+INSERT INTO posts (title, url, description, published_at, feed_id)
+VALUES ($1, $2, $3, $4, $5)
 ON CONFLICT (url) DO NOTHING
 `
 
 type CreatePostParams struct {
-	ID          uuid.UUID
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
 	Title       sql.NullString
 	Url         string
 	Description sql.NullString
@@ -33,9 +30,6 @@ type CreatePostParams struct {
 // Returns 1 if the post was inserted, 0 if a post with this URL already exists.
 func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) (int64, error) {
 	result, err := q.db.ExecContext(ctx, createPost,
-		arg.ID,
-		arg.CreatedAt,
-		arg.UpdatedAt,
 		arg.Title,
 		arg.Url,
 		arg.Description,

@@ -4,10 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"log"
-	"time"
 
 	"github.com/danielakinremi1-dev/RSS_feed_aggregator/internal/database"
-	"github.com/google/uuid"
 )
 
 func scrapeFeeds(s *state) {
@@ -59,9 +57,6 @@ func scrapeFeeds(s *state) {
 		}
 
 		queryArgs := database.CreatePostParams{
-			ID:          uuid.New(),
-			CreatedAt:   time.Now(),
-			UpdatedAt:   time.Now(),
 			Title:       itemTitle,
 			Url:         item.Link,
 			Description: itemDescription,

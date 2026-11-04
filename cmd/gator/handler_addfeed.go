@@ -4,10 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/danielakinremi1-dev/RSS_feed_aggregator/internal/database"
-	"github.com/google/uuid"
 )
 
 func handlerAddFeed(s *state, cmd command, user database.User) error {
@@ -19,12 +17,9 @@ func handlerAddFeed(s *state, cmd command, user database.User) error {
 	url := cmd.Args[1]
 
 	queryArgs := database.CreateFeedParams{
-		ID:        uuid.New(),
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-		Name:      feedName,
-		Url:       url,
-		UserID:    user.ID,
+		Name:   feedName,
+		Url:    url,
+		UserID: user.ID,
 	}
 
 	feedData, err := s.db.CreateFeed(context.Background(), queryArgs)

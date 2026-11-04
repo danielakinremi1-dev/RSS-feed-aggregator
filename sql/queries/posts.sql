@@ -1,7 +1,7 @@
 -- name: CreatePost :execrows
 -- Returns 1 if the post was inserted, 0 if a post with this URL already exists.
-INSERT INTO posts (id, created_at, updated_at, title, url, description, published_at, feed_id)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+INSERT INTO posts (title, url, description, published_at, feed_id)
+VALUES ($1, $2, $3, $4, $5)
 ON CONFLICT (url) DO NOTHING;
 
 -- name: GetPostsForUser :many

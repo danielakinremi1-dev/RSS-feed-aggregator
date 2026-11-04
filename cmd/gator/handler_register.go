@@ -5,10 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"time"
-
-	"github.com/danielakinremi1-dev/RSS_feed_aggregator/internal/database"
-	"github.com/google/uuid"
 )
 
 func handlerRegister(s *state, cmd command) error {
@@ -25,14 +21,7 @@ func handlerRegister(s *state, cmd command) error {
 		return fmt.Errorf("register %q: check existing user: %w", name, err)
 	}
 
-	queryArgs := database.CreateUserParams{
-		ID:        uuid.New(),
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-		Name:      name,
-	}
-
-	user, err := s.db.CreateUser(context.Background(), queryArgs)
+	user, err := s.db.CreateUser(context.Background(), name)
 	if err != nil {
 		return fmt.Errorf("register %q: %w", name, err)
 	}
