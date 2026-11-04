@@ -41,6 +41,14 @@ func handlerAgg(ctx context.Context, s *state, cmd command) error {
 	ticker := time.NewTicker(timeBetweenRequests)
 	defer ticker.Stop()
 	for {
+		// Checked first, not just in the select below: when ctx.Done() and
+		// ticker.C are both ready, select picks one at random, so a signal that
+		// arrived during a batch could otherwise lose to the next tick.
+		if ctx.Err() != nil {
+			log.Println("Shutdown complete")
+			return nil
+		}
+
 		// A batch that has started is allowed to finish: WithoutCancel keeps
 		// ctx's values but ignores the shutdown signal, and each feed gets its
 		// own timeout so shutdown can't hang on a slow server.
@@ -48,8 +56,6 @@ func handlerAgg(ctx context.Context, s *state, cmd command) error {
 
 		select {
 		case <-ctx.Done():
-			log.Println("Shutdown complete")
-			return nil
 		case <-ticker.C:
 		}
 	}
