@@ -1,19 +1,19 @@
-package main
+package cli
 
 import (
 	"context"
 	"fmt"
 )
 
-func handlerUsers(ctx context.Context, s *state, cmd command) error {
+func handlerUsers(ctx context.Context, s *State, cmd command) error {
 
-	users, err := s.db.GetUsers(ctx)
+	users, err := s.DB.GetUsers(ctx)
 	if err != nil {
 		return fmt.Errorf("list users: %w", err)
 	}
 
 	for _, user := range users {
-		if user == s.cfg.CurrentUserName {
+		if user == s.Cfg.CurrentUserName {
 			fmt.Printf("* %v (current)\n", user)
 			continue
 		}

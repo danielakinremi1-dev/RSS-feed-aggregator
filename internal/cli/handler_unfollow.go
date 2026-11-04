@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"context"
@@ -8,14 +8,14 @@ import (
 	"github.com/danielakinremi1-dev/RSS_feed_aggregator/internal/database"
 )
 
-func handlerUnfollow(ctx context.Context, s *state, cmd command, user database.User) error {
+func handlerUnfollow(ctx context.Context, s *State, cmd command, user database.User) error {
 	if len(cmd.Args) < 1 {
 		return errors.New("usage: unfollow <url>")
 	}
 
 	url := cmd.Args[0]
 
-	feedID, err := s.db.GetFeedID(ctx, url)
+	feedID, err := s.DB.GetFeedID(ctx, url)
 	if err != nil {
 		return fmt.Errorf("unfollow %q: look up feed: %w", url, err)
 	}
@@ -25,7 +25,7 @@ func handlerUnfollow(ctx context.Context, s *state, cmd command, user database.U
 		FeedID: feedID,
 	}
 
-	err = s.db.DeleteFeedFollow(ctx, queryArgs)
+	err = s.DB.DeleteFeedFollow(ctx, queryArgs)
 	if err != nil {
 		return fmt.Errorf("unfollow %q: %w", url, err)
 	}

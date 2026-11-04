@@ -1,4 +1,5 @@
-package main
+// Package feed fetches and parses RSS 2.0 and Atom feeds.
+package feed
 
 import (
 	"bytes"
@@ -24,8 +25,8 @@ type Item struct {
 	PubDate     string
 }
 
-// parseFeed detects the format from the root element and parses accordingly.
-func parseFeed(data []byte) (*Feed, error) {
+// Parse detects the format from the root element and parses accordingly.
+func Parse(data []byte) (*Feed, error) {
 	root, err := rootElement(data)
 	if err != nil {
 		return nil, fmt.Errorf("parse feed: %w", err)

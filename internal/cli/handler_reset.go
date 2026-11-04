@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"io"
 )
 
-func handlerReset(ctx context.Context, s *state, cmd command) error {
+func handlerReset(ctx context.Context, s *State, cmd command) error {
 	fs := flag.NewFlagSet("reset", flag.ContinueOnError)
 	fs.SetOutput(io.Discard) // errors are returned, not printed by the flag package
 	force := fs.Bool("force", false, "confirm deleting all users, feeds, follows and posts")
@@ -19,7 +19,7 @@ func handlerReset(ctx context.Context, s *state, cmd command) error {
 		return errors.New("reset deletes ALL users, feeds, follows and posts; rerun with --force to confirm")
 	}
 
-	err := s.db.DeleteUsers(ctx)
+	err := s.DB.DeleteUsers(ctx)
 	if err != nil {
 		return fmt.Errorf("reset: delete users: %w", err)
 	}

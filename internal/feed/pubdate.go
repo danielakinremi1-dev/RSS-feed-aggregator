@@ -1,4 +1,4 @@
-package main
+package feed
 
 import (
 	"strings"
@@ -24,8 +24,8 @@ var pubDateLayouts = []string{
 	"2006-01-02",
 }
 
-// parsePubDate parses a feed item's date, reporting false if no layout matches.
-func parsePubDate(s string) (time.Time, bool) {
+// ParseDate parses a feed item's date, reporting false if no layout matches.
+func ParseDate(s string) (time.Time, bool) {
 	s = strings.TrimSpace(s)
 	if s == "" {
 		return time.Time{}, false
