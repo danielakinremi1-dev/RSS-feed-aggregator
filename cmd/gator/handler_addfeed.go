@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -11,7 +12,7 @@ import (
 
 func handlerAddFeed(s *state, cmd command, user database.User) error {
 	if len(cmd.Args) < 2 {
-		return fmt.Errorf("Insufficient command arguments give for adding feed")
+		return errors.New("usage: addfeed <name> <url>")
 	}
 
 	feedName := cmd.Args[0]

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -11,7 +12,7 @@ import (
 
 func handlerFollow(s *state, cmd command, user database.User) error {
 	if len(cmd.Args) < 1 {
-		return fmt.Errorf("Insufficient command arguments given for following feed")
+		return errors.New("usage: follow <url>")
 	}
 
 	url := cmd.Args[0]

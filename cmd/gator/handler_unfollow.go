@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/danielakinremi1-dev/RSS_feed_aggregator/internal/database"
@@ -9,7 +10,7 @@ import (
 
 func handlerUnfollow(s *state, cmd command, user database.User) error {
 	if len(cmd.Args) < 1 {
-		return fmt.Errorf("Insufficient command arguments give for adding feed")
+		return errors.New("usage: unfollow <url>")
 	}
 
 	url := cmd.Args[0]

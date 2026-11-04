@@ -2,12 +2,13 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 )
 
 func handlerLogin(s *state, cmd command) error {
 	if len(cmd.Args) == 0 {
-		return fmt.Errorf("No command arguments give for login")
+		return errors.New("usage: login <name>")
 	}
 
 	name := cmd.Args[0]

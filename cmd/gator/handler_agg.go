@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -9,12 +10,12 @@ import (
 func handlerAgg(s *state, cmd command) error {
 
 	if len(cmd.Args) < 1 {
-		return fmt.Errorf("Insufficient command arguments given for aggregating feeds")
+		return errors.New("usage: agg <time_between_reqs>, e.g. agg 30s")
 	}
 
 	timeBetweenRequests, err := time.ParseDuration(cmd.Args[0])
 	if err != nil {
-		return fmt.Errorf("invalid duration: %w", err)
+		return fmt.Errorf("agg: invalid duration %q: %w", cmd.Args[0], err)
 	}
 
 	log.Printf("Collecting feeds every %s...", timeBetweenRequests)
