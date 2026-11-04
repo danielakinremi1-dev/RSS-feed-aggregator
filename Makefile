@@ -6,7 +6,7 @@ export GATOR_DB_PORT
 
 GOOSE := goose -dir sql/schema postgres "$(DB_URL)"
 
-.PHONY: build test test-integration lint fmt sqlc db-up db-down migrate-up migrate-down migrate-status psql up down
+.PHONY: build test test-integration lint fmt sqlc db-up db-down migrate-up migrate-down migrate-status psql demo up down
 
 build: ## Build bin/gator
 	go build -o bin/gator ./cmd/gator
@@ -46,6 +46,16 @@ migrate-status: ## Show applied migrations on DB_URL
 
 psql: ## Open a psql shell on DB_URL
 	psql "$(DB_URL)"
+
+DEMO_DB_PORT ?= 55434
+DEMO_DB_URL := postgres://postgres:postgres@localhost:$(DEMO_DB_PORT)/gator?sslmode=disable
+
+demo: ## Render docs/demo.gif with VHS against a throwaway database
+	CGO_ENABLED=0 go build -o bin/gator ./cmd/gator
+	GATOR_DB_PORT=$(DEMO_DB_PORT) docker compose -p gator-demo up -d --wait db
+	goose -dir sql/schema postgres "$(DEMO_DB_URL)" up
+	DB_URL="$(DEMO_DB_URL)" vhs demo.tape; status=$$?; \
+		GATOR_DB_PORT=$(DEMO_DB_PORT) docker compose -p gator-demo down -v; exit $$status
 
 # Old target names, kept so existing habits still work.
 up: migrate-up
