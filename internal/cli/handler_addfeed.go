@@ -27,8 +27,7 @@ func handlerAddFeed(ctx context.Context, s *State, cmd command, user database.Us
 		return fmt.Errorf("create feed %q: %w", url, err)
 	}
 
-	fmt.Println("RSSFeed created successfully!")
-	fmt.Printf("%+v\n", feedData)
+	fmt.Printf("Added feed %q (%s)\n", feedData.Name, feedData.Url)
 
 	err = handlerFollow(ctx, s, command{Name: "follow", Args: []string{feedData.Url}}, user)
 	if err != nil {

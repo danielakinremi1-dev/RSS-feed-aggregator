@@ -30,8 +30,7 @@ func handlerUnfollow(ctx context.Context, s *State, cmd command, user database.U
 		return fmt.Errorf("unfollow %q: %w", url, err)
 	}
 
-	fmt.Println("")
-	fmt.Printf("RSSFeed '%v' deleted successfully!\n", url)
+	fmt.Printf("%s unfollowed %s\n", user.Name, url)
 
 	return nil
 }

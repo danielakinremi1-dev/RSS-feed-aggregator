@@ -23,6 +23,6 @@ func handlerLogin(ctx context.Context, s *State, cmd command) error {
 		return fmt.Errorf("login %q: set current user: %w", name, err)
 	}
 
-	fmt.Println("User switched successfully!")
+	fmt.Printf("Logged in as %s\n", name)
 	return nil
 }

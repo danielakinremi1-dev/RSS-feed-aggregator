@@ -23,6 +23,6 @@ func handlerReset(ctx context.Context, s *State, cmd command) error {
 	if err != nil {
 		return fmt.Errorf("reset: delete users: %w", err)
 	}
-	fmt.Println("All users successfully deleted")
+	fmt.Println("Deleted all users, feeds, follows and posts")
 	return nil
 }

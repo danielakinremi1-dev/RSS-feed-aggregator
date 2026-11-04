@@ -31,7 +31,6 @@ func handlerRegister(ctx context.Context, s *State, cmd command) error {
 		return fmt.Errorf("register %q: set current user: %w", name, err)
 	}
 
-	fmt.Println("User created successfully!")
-	fmt.Printf("%+v\n", user)
+	fmt.Printf("Registered and logged in as %s\n", user.Name)
 	return nil
 }

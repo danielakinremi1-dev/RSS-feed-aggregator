@@ -30,7 +30,6 @@ func handlerFollow(ctx context.Context, s *State, cmd command, user database.Use
 		return fmt.Errorf("follow %q: %w", url, err)
 	}
 
-	fmt.Println("* RSSFeed followed successfully!")
-	fmt.Printf("* User %v now follows the %v feed\n", feedFollow.UserName, feedFollow.FeedName)
+	fmt.Printf("%s now follows %q\n", feedFollow.UserName, feedFollow.FeedName)
 	return nil
 }
