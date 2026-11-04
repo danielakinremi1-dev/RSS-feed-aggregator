@@ -1,6 +1,6 @@
 # Gator
 
-[![CI](https://github.com/danielakinremi1-dev/RSS_feed_aggregator/actions/workflows/ci.yml/badge.svg)](https://github.com/danielakinremi1-dev/RSS_feed_aggregator/actions/workflows/ci.yml)
+[![CI](https://github.com/danielakinremi1-dev/RSS-feed-aggregator/actions/workflows/ci.yml/badge.svg)](https://github.com/danielakinremi1-dev/RSS-feed-aggregator/actions/workflows/ci.yml)
 
 A multi-user command-line RSS and Atom aggregator written in Go and backed by PostgreSQL. Its scraper fetches feeds concurrently, and you can run several copies of it against one database without them fetching the same feed twice.
 
@@ -16,17 +16,21 @@ A multi-user command-line RSS and Atom aggregator written in Go and backed by Po
 
 ## Install
 
-Download a prebuilt binary for Linux, macOS or Windows from the [Releases page](https://github.com/danielakinremi1-dev/RSS_feed_aggregator/releases), or install with Go:
+Download a prebuilt binary for Linux, macOS or Windows from the [Releases page](https://github.com/danielakinremi1-dev/RSS-feed-aggregator/releases), or install with Go:
 
 ```sh
-go install github.com/danielakinremi1-dev/RSS_feed_aggregator/cmd/gator@latest
+go install github.com/danielakinremi1-dev/RSS-feed-aggregator/cmd/gator@latest
 ```
+
+You need PostgreSQL 13 or later. Building from source needs Go 1.27+. The quick start below runs Postgres in Docker, so it also needs Docker.
 
 ## Quick start
 
-You need a PostgreSQL database. The repo includes one in Docker:
+The database migrations live in this repo, so clone it even if you installed a prebuilt binary:
 
 ```sh
+git clone https://github.com/danielakinremi1-dev/RSS-feed-aggregator.git
+cd RSS-feed-aggregator
 make db-up                                               # Postgres on localhost:5432
 go install github.com/pressly/goose/v3/cmd/goose@latest  # migration tool
 make migrate-up
@@ -39,6 +43,8 @@ Point gator at the database in `~/.gatorconfig.json`:
 ```json
 { "db_url": "postgres://postgres:postgres@localhost:5432/gator?sslmode=disable" }
 ```
+
+gator adds a `current_user_name` field to this file itself when you run `register` or `login`.
 
 Then:
 
