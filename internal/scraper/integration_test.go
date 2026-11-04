@@ -126,7 +126,9 @@ func TestIntegration(t *testing.T) {
 			t.Errorf("conditional requests = %d, want 1", n)
 		}
 		var count int
-		db.QueryRow("SELECT count(*) FROM posts").Scan(&count)
+		if err := db.QueryRow("SELECT count(*) FROM posts").Scan(&count); err != nil {
+			t.Fatal(err)
+		}
 		if count != 3 {
 			t.Errorf("posts after second scrape = %d, want 3", count)
 		}
@@ -140,7 +142,10 @@ func TestIntegration(t *testing.T) {
 		}))
 		defer srv.Close()
 
-		user, _ := q.CreateUser(ctx, "bob")
+		user, err := q.CreateUser(ctx, "bob")
+		if err != nil {
+			t.Fatal(err)
+		}
 		feed, err := q.CreateFeed(ctx, database.CreateFeedParams{Name: "broken", Url: srv.URL, UserID: user.ID})
 		if err != nil {
 			t.Fatal(err)
@@ -176,7 +181,10 @@ func TestIntegration(t *testing.T) {
 		truncate(t, db)
 
 		const feeds, claimers, perClaim, rounds = 200, 20, 10, 25 // claimers*perClaim == feeds
-		user, _ := q.CreateUser(ctx, "carol")
+		user, err := q.CreateUser(ctx, "carol")
+		if err != nil {
+			t.Fatal(err)
+		}
 		for i := range feeds {
 			_, err := q.CreateFeed(ctx, database.CreateFeedParams{
 				Name: fmt.Sprint("f", i), Url: fmt.Sprintf("http://example.invalid/%d", i), UserID: user.ID,

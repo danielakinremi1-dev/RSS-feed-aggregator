@@ -27,7 +27,9 @@ func TestFetchOK(t *testing.T) {
 		}
 		w.Header().Set("ETag", `"v1"`)
 		w.Header().Set("Last-Modified", "Tue, 03 Nov 2026 09:00:00 GMT")
-		w.Write(body)
+		if _, err := w.Write(body); err != nil {
+			t.Error(err)
+		}
 	})
 
 	res, err := (&Fetcher{}).Fetch(context.Background(), srv.URL, Validators{})
@@ -86,7 +88,11 @@ func TestFetchBadStatus(t *testing.T) {
 
 func TestFetchSizeLimit(t *testing.T) {
 	body := readFixture(t, "rss.xml")
-	srv := serve(t, func(w http.ResponseWriter, r *http.Request) { w.Write(body) })
+	srv := serve(t, func(w http.ResponseWriter, r *http.Request) {
+		if _, err := w.Write(body); err != nil {
+			t.Error(err)
+		}
+	})
 	size := int64(len(body))
 
 	// Exactly at the limit is fine.
