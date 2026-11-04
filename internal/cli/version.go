@@ -4,7 +4,7 @@ import "runtime/debug"
 
 // Version is set at link time by release builds:
 //
-//	-ldflags "-X github.com/danielakinremi1-dev/RSS_feed_aggregator/internal/cli.Version=v1.2.3"
+//	-ldflags "-X github.com/danielakinremi1-dev/RSS-feed-aggregator/internal/cli.Version=v1.2.3"
 var Version = "dev"
 
 // version reports Version, falling back to the module version Go embeds for

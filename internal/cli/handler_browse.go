@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/danielakinremi1-dev/RSS_feed_aggregator/internal/database"
+	"github.com/danielakinremi1-dev/RSS-feed-aggregator/internal/database"
 )
 
 const defaultBrowseLimit = 10

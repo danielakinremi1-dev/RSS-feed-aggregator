@@ -9,7 +9,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/danielakinremi1-dev/RSS_feed_aggregator/internal/scraper"
+	"github.com/danielakinremi1-dev/RSS-feed-aggregator/internal/scraper"
 )
 
 const aggUsage = "usage: agg [--workers N] <time_between_reqs>, e.g. agg --workers 4 30s"

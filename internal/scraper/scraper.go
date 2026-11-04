@@ -9,8 +9,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/danielakinremi1-dev/RSS_feed_aggregator/internal/database"
-	"github.com/danielakinremi1-dev/RSS_feed_aggregator/internal/feed"
+	"github.com/danielakinremi1-dev/RSS-feed-aggregator/internal/database"
+	"github.com/danielakinremi1-dev/RSS-feed-aggregator/internal/feed"
 	"golang.org/x/sync/errgroup"
 )
 

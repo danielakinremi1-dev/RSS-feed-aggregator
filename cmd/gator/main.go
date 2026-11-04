@@ -10,9 +10,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/danielakinremi1-dev/RSS_feed_aggregator/internal/cli"
-	"github.com/danielakinremi1-dev/RSS_feed_aggregator/internal/config"
-	"github.com/danielakinremi1-dev/RSS_feed_aggregator/internal/database"
+	"github.com/danielakinremi1-dev/RSS-feed-aggregator/internal/cli"
+	"github.com/danielakinremi1-dev/RSS-feed-aggregator/internal/config"
+	"github.com/danielakinremi1-dev/RSS-feed-aggregator/internal/database"
 	_ "github.com/lib/pq"
 )
 

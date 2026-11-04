@@ -16,8 +16,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/danielakinremi1-dev/RSS_feed_aggregator/internal/database"
-	"github.com/danielakinremi1-dev/RSS_feed_aggregator/internal/scraper"
+	"github.com/danielakinremi1-dev/RSS-feed-aggregator/internal/database"
+	"github.com/danielakinremi1-dev/RSS-feed-aggregator/internal/scraper"
 	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 	"github.com/pressly/goose/v3"

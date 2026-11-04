@@ -20,7 +20,7 @@ builds:
       - -trimpath
     ldflags:
       - -s -w
-      - -X github.com/danielakinremi1-dev/RSS_feed_aggregator/internal/cli.Version={{ .Version }}
+      - -X github.com/danielakinremi1-dev/RSS-feed-aggregator/internal/cli.Version={{ .Version }}
 
 archives:
   - formats: [tar.gz]

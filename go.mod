@@ -1,4 +1,4 @@
-module github.com/danielakinremi1-dev/RSS_feed_aggregator
+module github.com/danielakinremi1-dev/RSS-feed-aggregator
 
 go 1.27.1
 

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/danielakinremi1-dev/RSS_feed_aggregator/internal/database"
+	"github.com/danielakinremi1-dev/RSS-feed-aggregator/internal/database"
 )
 
 func middlewareLoggedIn(handler func(ctx context.Context, s *State, cmd command, user database.User) error) handlerFunc {
