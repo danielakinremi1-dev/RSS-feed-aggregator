@@ -25,14 +25,14 @@ func scrapeFeeds(s *state) {
 		return
 	}
 
-	RSSFeed, err := fetchFeed(context.Background(), nextFeed.Url)
+	fetched, err := fetchFeed(context.Background(), nextFeed.Url)
 	if err != nil {
 		log.Printf("Couldn't collect feed %s: %v\n", nextFeed.Name, err)
 		return
 	}
 
 	var newPosts, existing, invalid int
-	for _, item := range RSSFeed.Channel.Item {
+	for _, item := range fetched.Items {
 
 		if len(item.Link) < 1 {
 			invalid++
@@ -82,5 +82,5 @@ func scrapeFeeds(s *state) {
 	}
 
 	log.Printf("Feed %q: %d new, %d already stored, %d invalid (of %d items)",
-		nextFeed.Name, newPosts, existing, invalid, len(RSSFeed.Channel.Item))
+		nextFeed.Name, newPosts, existing, invalid, len(fetched.Items))
 }
